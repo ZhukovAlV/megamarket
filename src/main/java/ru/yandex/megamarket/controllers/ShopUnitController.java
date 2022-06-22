@@ -1,20 +1,19 @@
 package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
-import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
 import ru.yandex.megamarket.services.ShopUnitService;
-import ru.yandex.megamarket.error.Error;
 
 import java.util.List;
 
 
-@Controller
+@RestController
 public class ShopUnitController {
 
     private final ShopUnitService shopUnitService;
@@ -22,6 +21,20 @@ public class ShopUnitController {
     @Autowired
     public ShopUnitController(ShopUnitService shopUnitService) {
         this.shopUnitService = shopUnitService;
+    }
+
+    /**
+     * Импортирует новые товары и/или категории.
+     * Товары/категории импортированные повторно обновляют текущие.
+     * Изменение типа элемента с товара на категорию или с категории на товар не допускается.
+     * Порядок элементов в запросе является произвольным.
+     * @param shopUnitImportRequest Запрос с данными
+     * @return HttpStatus OK
+     */
+    @PostMapping(value = "imports/", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<?> importItems(ShopUnitImportRequest shopUnitImportRequest) {
+        shopUnitService.importShopUnitItems(shopUnitImportRequest);
+        return ResponseEntity.ok().build();
     }
 
 /*    @GetMapping(value = "nodes/{id}", produces = "application/json")
@@ -34,15 +47,6 @@ public class ShopUnitController {
         return shopUnit != null ?
                 new ResponseEntity<>(shopUnit, HttpStatus.OK) :
                 new ResponseEntity<>(new Error(404, "Item not found"), HttpStatus.NOT_FOUND);
-    }
-
-    @PostMapping(value = "imports/", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> importItems(@RequestBody ShopUnitImportRequest shopUnitImportRequest) {
-        // TODO доделать shopUnitService.importItems
-        boolean imported = shopUnitService.importItems(shopUnitImportRequest);
-        return imported ?
-                new ResponseEntity<>(HttpStatus.OK) :
-                new ResponseEntity<>("Validation Failed", HttpStatus.BAD_REQUEST);
     }
 
     @DeleteMapping(value = "delete/{id}", produces = "application/json")

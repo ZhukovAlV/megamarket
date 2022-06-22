@@ -1,5 +1,6 @@
 package ru.yandex.megamarket.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,7 +42,8 @@ public class ShopUnit {
      */
     @NotNull
     @Column(nullable = false)
-    private String date;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
+    private LocalDateTime date;
 
     /**
      * UUID родительской категории
