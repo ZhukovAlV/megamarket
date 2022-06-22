@@ -16,10 +16,10 @@ import java.util.List;
  * Объект товара или категории
  */
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "ShopUnit")
 public class ShopUnit {
 
@@ -41,7 +41,7 @@ public class ShopUnit {
      */
     @NotNull
     @Column(nullable = false)
-    private LocalDateTime date;
+    private String date;
 
     /**
      * UUID родительской категории
@@ -53,8 +53,17 @@ public class ShopUnit {
     @Enumerated(EnumType.STRING)
     private ShopUnitType type;
 
-    private int price;
+    /**
+     * Целое число, для категории - это средняя цена всех дочерних
+     * товаров (включая товары подкатегорий). Если цена является не целым числом,
+     * округляется в меньшую сторону до целого числа. Если категория не содержит
+     * товаров цена равна null.
+     */
+    private Long price;
 
-
-
+    /**
+     * Список всех дочерних товаров\категорий. Для товаров поле равно null.
+     */
+    @Transient
+    private List<ShopUnit> children = new ArrayList<>(); // в другой класс
 }
