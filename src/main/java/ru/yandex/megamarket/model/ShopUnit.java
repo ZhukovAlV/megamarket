@@ -17,7 +17,6 @@ import java.util.List;
  * Объект товара или категории
  */
 @Entity
-@AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
@@ -25,9 +24,6 @@ import java.util.List;
 public class ShopUnit {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid")
-    @Column(columnDefinition = "CHAR(32)")
     private String id;
 
     /**
@@ -67,5 +63,51 @@ public class ShopUnit {
      * Список всех дочерних товаров\категорий. Для товаров поле равно null.
      */
     @Transient
-    private List<ShopUnit> children = new ArrayList<>(); // в другой класс
+    private List<ShopUnit> children;
+
+    public static class Builder {
+        private final ShopUnit newShopUnit;
+
+        public Builder() {
+            newShopUnit = new ShopUnit();
+        }
+
+        public Builder withId(String id){
+            newShopUnit.id = id;
+            return this;
+        }
+        public Builder withName(String name){
+            newShopUnit.name = name;
+            return this;
+        }
+
+        public Builder withDate(LocalDateTime date){
+            newShopUnit.date = date;
+            return this;
+        }
+
+        public Builder withParentId(String parentId){
+            newShopUnit.parentId = parentId;
+            return this;
+        }
+
+        public Builder withType(ShopUnitType type){
+            newShopUnit.type = type;
+            return this;
+        }
+
+        public Builder withPrice(Long price){
+            newShopUnit.price = price;
+            return this;
+        }
+
+        public Builder withChildren(List<ShopUnit> children){
+            newShopUnit.children = children;
+            return this;
+        }
+
+        public ShopUnit build(){
+            return newShopUnit;
+        }
+    }
 }

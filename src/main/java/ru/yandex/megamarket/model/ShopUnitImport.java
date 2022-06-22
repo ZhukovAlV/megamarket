@@ -16,9 +16,6 @@ import javax.persistence.*;
 public class ShopUnitImport {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid")
-    @Column(columnDefinition = "CHAR(32)")
     private String id;
 
     /**

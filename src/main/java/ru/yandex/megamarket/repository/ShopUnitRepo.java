@@ -5,10 +5,11 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface ShopUnitRepo extends CrudRepository<ShopUnit, String> {
 
-    List<ShopUnit> findAllByTypeAndDateBetween(ShopUnitType type, String start, String to);
+    List<ShopUnit> findAllByTypeAndDateBetween(ShopUnitType type, LocalDateTime start, LocalDateTime to);
 }

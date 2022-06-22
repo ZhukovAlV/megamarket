@@ -31,7 +31,7 @@ public class ShopUnitController {
      * @param shopUnitImportRequest Запрос с данными
      * @return HttpStatus OK
      */
-    @PostMapping(value = "imports/", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/imports", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> importItems(ShopUnitImportRequest shopUnitImportRequest) {
         shopUnitService.importShopUnitItems(shopUnitImportRequest);
         return ResponseEntity.ok().build();

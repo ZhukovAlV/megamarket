@@ -23,9 +23,22 @@ public class ShopUnitService {
         this.shopUnitItemsParser = shopUnitItemsParser;
     }
 
+    /**
+     * Импорт товаров и/или категорий
+     * @param shopUnitImportRequest запрос со списком товаров и/или категорий
+     */
     public void importShopUnitItems(ShopUnitImportRequest shopUnitImportRequest) {
         List<ShopUnit> shopUnits = shopUnitItemsParser.parseShopUnitImportRequest(shopUnitImportRequest);
         shopUnitRepo.saveAll(shopUnits);
+    }
+
+    /**
+     * Получение товара и/или категории по id
+     * @param id идентификатор товара и/или категории
+     * @return Optional<ShopUnit>
+     */
+    public Optional<ShopUnit> getShopUnitById(String id) {
+        return shopUnitRepo.findById(id);
     }
 
 /*    public boolean importItemsShopUnit(ShopUnitImportRequest shopUnitImportRequest) {
@@ -87,10 +100,6 @@ public class ShopUnitService {
         log.warn("Данный ID отсутствует в базе данных");
         return null;
     }*/
-
-    public Optional<ShopUnit> getShopUnitById(String id) {
-        return shopUnitRepo.findById(id);
-    }
 
     @Transactional
     public void saveShopUnit(ShopUnit shopUnit) {
