@@ -14,10 +14,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
 public class ParserService {
+
+    private static final int LENGTH_UUID = 36;
 
 /*    private final ShopUnitRepo shopUnitRepo;
 
@@ -39,10 +42,10 @@ public class ParserService {
         List<ShopUnit> listRes = new ArrayList<>();
         for (ShopUnitImport item : shopUnitImportRequest.getItems()) {
             ShopUnit shopUnit = new ShopUnit.Builder()
-                    .withId(item.getId())
+                    .withId(stringToUUID(item.getId()))
                     .withName(item.getName())
                     .withDate(dateUpdate)
-                    .withParentId(item.getParentId())
+                    .withParentId(stringToUUID(item.getParentId()))
                     .withType(item.getType())
                     .withPrice(item.getPrice())
                     .build();
@@ -56,6 +59,17 @@ public class ParserService {
         addChildrenToParents(listRes);
 
         return listRes;
+    }
+
+    /**
+     * Преобразование String в UUID
+     * @param id идентификатор в String
+     * @return идентификатор UUID
+     */
+    public UUID stringToUUID(String id) {
+        if (id == null) return null;
+        else if (id.length() != LENGTH_UUID) throw new ValidationFailedException();
+        else return UUID.fromString(id);
     }
 
     /**
@@ -89,9 +103,8 @@ public class ParserService {
 
         for (ShopUnit shopUnit : list) {
 
-            // ID, Название, ТИП элемента не может быть null
-            if (shopUnit.getId() == null || shopUnit.getId().isEmpty()
-                    || shopUnit.getName() == null || shopUnit.getName().isEmpty()
+            // Название, ТИП элемента не может быть null
+            if (shopUnit.getName() == null || shopUnit.getName().isEmpty()
                     || shopUnit.getType() == null) throw new ValidationFailedException();
 
             // У категорий поле price должно содержать null

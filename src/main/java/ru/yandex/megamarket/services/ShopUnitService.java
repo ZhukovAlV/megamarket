@@ -4,10 +4,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.yandex.megamarket.model.*;
+import ru.yandex.megamarket.exception.ItemNotFoundException;
+import ru.yandex.megamarket.model.ShopUnit;
+import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -36,34 +42,55 @@ public class ShopUnitService {
      * @param id идентификатор товара и/или категории
      * @return Optional<ShopUnit>
      */
-    public Optional<ShopUnit> getShopUnitById(String id) {
+    public Optional<ShopUnit> getShopUnitById(UUID id) {
         return shopUnitRepo.findById(id);
     }
 
-/*    public ShopUnit getInfoOfItemAndItsChildrenById(String id) {
-        Optional<ShopUnit> itemOpt = shopUnitRepo.findById(id);
-        if (itemOpt.isPresent()) {
-            ShopUnit shopUnit = itemOpt.get();
-            // TODO Доделать метод findChildrenAsHierarchy
-          //  findChildrenAsHierarchy(shopUnit);
-            log.info("Информация успешно получена из базы данных");
-            return shopUnit;
-        }
-        log.warn("Данный ID отсутствует в базе данных");
-        return null;
-    }*/
-
-    @Transactional
-    public void saveShopUnit(ShopUnit shopUnit) {
-        shopUnitRepo.save(shopUnit);
-    }
-
+    /**
+     * Получение всех товаров и/или категорий
+     * @return список ShopUnit
+     */
     public List<ShopUnit> getShopUnits() {
-/*        TempShopUnits tempShopUnits = new TempShopUnits();
-        List<ShopUnit> result =tempShopUnits.getShopUnitList();*/
         List<ShopUnit> result = new ArrayList<>();
         shopUnitRepo.findAll().forEach(result::add);
         return result;
     }
 
+    /**
+     * Сохранение объекта в БД
+     * @param shopUnit объект ShopUnit для сохранения
+     */
+    @Transactional
+    public void saveShopUnit(ShopUnit shopUnit) {
+        shopUnitRepo.save(shopUnit);
+    }
+
+    /**
+     * Удаление объекта ShopUnit
+     * @param id идентификатор объекта ShopUnit
+     */
+    public void deleteShopUnitById(String id) {
+        UUID uuid = parserService.stringToUUID(id);
+        ShopUnit shopUnit = shopUnitRepo.findById(uuid).orElseThrow(ItemNotFoundException::new);
+
+        // Удаляем ссылку на этот parentId у дочерних объектов
+        updateChildrenItem(shopUnit);
+
+        shopUnitRepo.delete(shopUnit);
+    }
+
+    /**
+     * Выставляем null в parentID удаленного объекта и обновляем дату
+     * @param shopUnit объект ShopUnit, который проверяем на наличие children
+     */
+    private void updateChildrenItem(ShopUnit shopUnit) {
+        if (shopUnit.getChildren() != null && shopUnit.getChildren().size() > 0) {
+            List<ShopUnit> shopUnitList = shopUnit.getChildren();
+            for (ShopUnit currentUnit : shopUnitList) {
+                currentUnit.setParentId(null);
+                currentUnit.setDate(LocalDateTime.now());
+                saveShopUnit(currentUnit);
+            }
+        }
+    }
 }

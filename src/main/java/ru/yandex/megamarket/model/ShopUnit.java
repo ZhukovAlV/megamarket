@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Объект товара или категории
@@ -20,7 +21,8 @@ import java.util.List;
 public class ShopUnit {
 
     @Id
-    private String id;
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
     /**
      * Имя категории
@@ -40,7 +42,7 @@ public class ShopUnit {
     /**
      * UUID родительской категории
      */
-    private String parentId;
+    private UUID parentId;
 
     @NotNull
     @Column(nullable = false)
@@ -58,7 +60,7 @@ public class ShopUnit {
     /**
      * Список всех дочерних товаров\категорий. Для товаров поле равно null.
      */
-    @Transient
+    @OneToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH}, mappedBy = "parentId")
     private List<ShopUnit> children;
 
     public static class Builder {
@@ -68,7 +70,7 @@ public class ShopUnit {
             newShopUnit = new ShopUnit();
         }
 
-        public Builder withId(String id){
+        public Builder withId(UUID id){
             newShopUnit.id = id;
             return this;
         }
@@ -82,7 +84,7 @@ public class ShopUnit {
             return this;
         }
 
-        public Builder withParentId(String parentId){
+        public Builder withParentId(UUID parentId){
             newShopUnit.parentId = parentId;
             return this;
         }

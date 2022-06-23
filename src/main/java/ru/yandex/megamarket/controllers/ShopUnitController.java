@@ -2,17 +2,11 @@ package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.yandex.megamarket.model.ShopUnit;
-import ru.yandex.megamarket.model.ShopUnitImport;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
-import ru.yandex.megamarket.model.ShopUnitType;
 import ru.yandex.megamarket.services.ShopUnitService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -34,9 +28,20 @@ public class ShopUnitController {
      * @param shopUnitImportRequest Запрос с данными
      * @return HttpStatus OK
      */
-    @PostMapping(value = "/imports", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/imports")
     public ResponseEntity<?> importItems(@RequestBody ShopUnitImportRequest shopUnitImportRequest) {
         shopUnitService.importShopUnitItems(shopUnitImportRequest);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Удаление объекта ShopUnit из базы
+     * @param id идентификатор ShopUnit
+     * @return HttpStatus OK
+     */
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteShopUnitById(@PathVariable String id) {
+        shopUnitService.deleteShopUnitById(id);
         return ResponseEntity.ok().build();
     }
 
@@ -49,19 +54,6 @@ public class ShopUnitController {
         final ShopUnit shopUnit = shopUnitService.getInfoOfItemAndItsChildrenById(id);
         return shopUnit != null ?
                 new ResponseEntity<>(shopUnit, HttpStatus.OK) :
-                new ResponseEntity<>(new Error(404, "Item not found"), HttpStatus.NOT_FOUND);
-    }
-
-    @DeleteMapping(value = "delete/{id}", produces = "application/json")
-    public ResponseEntity<?> deleteItem(@PathVariable(name = "id") String id) {
-        if (id==null || id.equals("") || id.contains(" ")) {
-            return new ResponseEntity<>(new Error(404, "Validation Failed"), HttpStatus.BAD_REQUEST);
-        }
-        // TODO доделать shopUnitService.deleteItemByIdAndChildren
-        boolean deleted = shopUnitService.deleteItemByIdAndChildren(id);
-
-        return deleted ?
-                new ResponseEntity<>(HttpStatus.OK) :
                 new ResponseEntity<>(new Error(404, "Item not found"), HttpStatus.NOT_FOUND);
     }
 
