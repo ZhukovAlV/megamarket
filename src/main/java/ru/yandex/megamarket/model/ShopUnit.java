@@ -2,24 +2,19 @@ package ru.yandex.megamarket.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Объект товара или категории
  */
 @Entity
+@Data
 @NoArgsConstructor
-@Getter
-@Setter
 @Table(name = "ShopUnit")
 public class ShopUnit {
 
