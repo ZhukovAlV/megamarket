@@ -2,13 +2,17 @@ package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.megamarket.model.ShopUnit;
+import ru.yandex.megamarket.model.ShopUnitImport;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.model.ShopUnitType;
 import ru.yandex.megamarket.services.ShopUnitService;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -80,9 +84,24 @@ public class ShopUnitController {
         return shopUnitService.getShopUnits();
     }
 
+/*    @GetMapping(value = "/test")
+    public ShopUnitImportRequest testShopUnits() {
+        List<ShopUnitImport> items = new ArrayList<>();
+        items.add(
+                new ShopUnitImport("3fa85f64-5717-4562-b3fc-2c963f66a111", "Товар1",
+                        "3fa85f64-5717-4562-b3fc-2c963f66a222", ShopUnitType.OFFER,
+                        100L));
+        items.add(
+                new ShopUnitImport("3fa85f64-5717-4562-b3fc-2c963f66a222", "Категория1",
+                        null, ShopUnitType.CATEGORY,
+                        null));
+
+        return new ShopUnitImportRequest(items, "2022-05-26T21:12:01.000Z");
+    }*/
+
     // Сохранить в базе для теста
-    @GetMapping("/test")
-    public void saveAllShopUnits() {
+/*    @GetMapping("/test")
+    public void testShopUnits() {
         ShopUnit shopUnitCat = new ShopUnit.Builder()
                 .withId("3fa85f64-5717-4562-b3fc-2c963f66a111")
                 .withName("Категория")
@@ -101,5 +120,5 @@ public class ShopUnitController {
 
         shopUnitService.saveShopUnit(shopUnitCat);
         shopUnitService.saveShopUnit(shopUnitOff);
-    }
+    }*/
 }

@@ -9,7 +9,6 @@ import ru.yandex.megamarket.model.ShopUnitImport;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.model.ShopUnitType;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -71,7 +70,10 @@ public class ParserService {
                     // Если объект НЕ КАТЕГОРИЯ имеет детей выдаем ошибку иначе добавляем ему ребенка
                     if (!listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY))
                         throw new ValidationFailedException();
-                    else listShopUnit.get(i).getChildren().add(shopUnit);
+                    else {
+                        if (listShopUnit.get(i).getChildren() == null) listShopUnit.get(i).setChildren(new ArrayList<>());
+                        listShopUnit.get(i).getChildren().add(shopUnit);
+                    }
                 }
             }
         }
@@ -103,16 +105,26 @@ public class ParserService {
             long count = list.stream().filter(item -> shopUnit.getId().equals(item.getId())).count();
             if (count > 1) throw new ValidationFailedException();
 
-            // Родителем товара или категории может быть только категория (смотрим также в базе родителя)
-            // TODO Смотреть каждый раз родителя в базе данных накладно для каждого объекта, написал письмо в Яндекс про это
-            ShopUnit shopUnitParent;
-            if (list.contains(shopUnit)) {
-                shopUnitParent = list.get(list.indexOf(shopUnit));
-            } /*else if (shopUnitRepo.findById(shopUnit.getParentId()).isPresent()) {
-                shopUnitParent =  shopUnitRepo.findById(shopUnit.getParentId()).get();
-            }*/ else throw new ItemNotFoundException();
-            if (!shopUnitParent.getType().equals(ShopUnitType.CATEGORY)) throw new ValidationFailedException();
+            // Родителем товара или категории может быть только категория
+            if (shopUnit.getParentId() != null) isParentCategory(list, shopUnit);
         }
+    }
+
+    /**
+     * Проверяем что родитель это Категория
+     * @param list список ShopUnit
+     * @param shopUnit объект ShopUnit, parentId которого проверяем
+     */
+    public void isParentCategory(List<ShopUnit> list, ShopUnit shopUnit) {
+        boolean isParentCategory = false;
+        for (ShopUnit item : list) {
+            if (shopUnit.getParentId().equals(item.getId())
+                    && item.getType().equals(ShopUnitType.CATEGORY)) {
+                isParentCategory = true;
+                break;
+            }
+        }
+        if (!isParentCategory) throw new ValidationFailedException();
     }
 
     /**
@@ -122,8 +134,9 @@ public class ParserService {
      */
     private static LocalDateTime isIsoDate(String date) {
         try {
-            Instant.from(DateTimeFormatter.ISO_INSTANT.parse(date));
-            return LocalDateTime.parse(date);
+            date = date.replace('T', ' ').replace('Z', ' ').trim();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+            return LocalDateTime.parse(date, formatter);
         } catch (DateTimeParseException e) {
             throw new ValidationFailedException();
         }
