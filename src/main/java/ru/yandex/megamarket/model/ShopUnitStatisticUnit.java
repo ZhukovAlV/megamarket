@@ -15,6 +15,7 @@ import java.time.OffsetDateTime;
 public class ShopUnitStatisticUnit {
 
     @Id
+    @Column(updatable = false, nullable = false)
     private String id;
 
     /**
@@ -47,6 +48,6 @@ public class ShopUnitStatisticUnit {
      */
     @NotNull
     @Column(nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS[xxx][xx][X]")
     private OffsetDateTime date;
 }

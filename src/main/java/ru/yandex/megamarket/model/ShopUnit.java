@@ -35,7 +35,7 @@ public class ShopUnit {
      */
     @NotNull
     @Column(nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS[xxx][xx][X]")
     private OffsetDateTime date;
 
     /**

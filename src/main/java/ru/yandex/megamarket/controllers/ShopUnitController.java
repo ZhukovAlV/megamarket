@@ -60,8 +60,8 @@ public class ShopUnitController {
 
 /*    @GetMapping("/sales")
     public ResponseEntity<?> getUnitsByChangePriceLast24Hours(
-            @RequestParam(name = "date") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") String dateTime) {
-        ShopUnitStatisticResponse statistic = shopUnitService.getSalesStatistic(dateTime);
+            @RequestParam(name = "date") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") String strDateTime) {
+        ShopUnitStatisticResponse statistic = shopUnitService.getSalesStatisticFor24Hour(strDateTime);
         return new ResponseEntity<>(statistic, HttpStatus.OK);
     }*/
 

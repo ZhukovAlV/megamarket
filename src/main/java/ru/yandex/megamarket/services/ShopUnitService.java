@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.megamarket.exception.ItemNotFoundException;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
+import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
 import java.time.OffsetDateTime;
@@ -64,6 +65,12 @@ public class ShopUnitService {
         shopUnitRepo.findAll().forEach(result::add);
         return result;
     }
+
+/*    public List<ShopUnitStatisticResponse> getSalesStatisticFor24Hour(String strDateTime) {
+        List<ShopUnitStatisticResponse> result = new ArrayList<>();
+
+        return result;
+    }*/
 
     /**
      * Сохранение объекта в БД
