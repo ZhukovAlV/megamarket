@@ -1,8 +1,8 @@
 package ru.yandex.megamarket.handler;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.yandex.megamarket.error.Error;
 import ru.yandex.megamarket.exception.ItemNotFoundException;
@@ -17,9 +17,9 @@ public class RestExceptionHandler {
      * @return Error код ошибки и сообщение
      */
     @ExceptionHandler(ValidationFailedException.class)
-    protected ResponseEntity<Error> handleValidationFailed(ValidationFailedException ex) {
-        Error error = new Error(400, ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    public Error handleValidationFailed(ValidationFailedException ex) {
+        return new Error(400, ex.getMessage());
     }
 
     /**
@@ -28,8 +28,8 @@ public class RestExceptionHandler {
      * @return Error код ошибки и сообщение
      */
     @ExceptionHandler(ItemNotFoundException.class)
-    protected ResponseEntity<Error> handleValidationFailed(ItemNotFoundException ex) {
-        Error error = new Error(404, ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    public Error handleValidationFailed(ItemNotFoundException ex) {
+        return new Error(404, ex.getMessage());
     }
 }

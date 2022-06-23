@@ -90,8 +90,9 @@ public class ParserService {
         for (ShopUnit shopUnit : list) {
 
             // ID, Название, ТИП элемента не может быть null
-            if (shopUnit.getId() == null || shopUnit.getName() == null || shopUnit.getType() == null)
-                throw new ValidationFailedException();
+            if (shopUnit.getId() == null || shopUnit.getId().isEmpty()
+                    || shopUnit.getName() == null || shopUnit.getName().isEmpty()
+                    || shopUnit.getType() == null) throw new ValidationFailedException();
 
             // У категорий поле price должно содержать null
             if (shopUnit.getType().equals(ShopUnitType.CATEGORY)
