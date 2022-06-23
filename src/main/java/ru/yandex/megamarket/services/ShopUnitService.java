@@ -9,7 +9,7 @@ import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,12 +20,12 @@ import java.util.UUID;
 public class ShopUnitService {
 
     private final ShopUnitRepo shopUnitRepo;
-    private final ParserService parserService;
+    private final ParserService parser;
 
     @Autowired
-    public ShopUnitService(ShopUnitRepo shopUnitRepo, ParserService parserService) {
+    public ShopUnitService(ShopUnitRepo shopUnitRepo, ParserService parser) {
         this.shopUnitRepo = shopUnitRepo;
-        this.parserService = parserService;
+        this.parser = parser;
     }
 
     /**
@@ -33,17 +33,26 @@ public class ShopUnitService {
      * @param shopUnitImportRequest запрос со списком товаров и/или категорий
      */
     public void importShopUnitItems(ShopUnitImportRequest shopUnitImportRequest) {
-        List<ShopUnit> shopUnits = parserService.parseShopUnitImportRequest(shopUnitImportRequest);
+        List<ShopUnit> shopUnits = parser.parseShopUnitImportRequest(shopUnitImportRequest);
         shopUnitRepo.saveAll(shopUnits);
     }
 
     /**
      * Получение товара и/или категории по id
-     * @param id идентификатор товара и/или категории
+     * @param id идентификатор товара и/или категории в формате UUID
      * @return Optional<ShopUnit>
      */
     public Optional<ShopUnit> getShopUnitById(UUID id) {
         return shopUnitRepo.findById(id);
+    }
+
+    /**
+     * Получение товара и/или категории по id
+     * @param id идентификатор товара и/или категории в формате String
+     * @return Optional<ShopUnit>
+     */
+    public Optional<ShopUnit> getShopUnitById(String id) {
+        return getShopUnitById(parser.stringToUUID(id));
     }
 
     /**
@@ -70,7 +79,7 @@ public class ShopUnitService {
      * @param id идентификатор объекта ShopUnit
      */
     public void deleteShopUnitById(String id) {
-        UUID uuid = parserService.stringToUUID(id);
+        UUID uuid = parser.stringToUUID(id);
         ShopUnit shopUnit = shopUnitRepo.findById(uuid).orElseThrow(ItemNotFoundException::new);
 
         // Удаляем ссылку на этот parentId у дочерних объектов
@@ -88,7 +97,7 @@ public class ShopUnitService {
             List<ShopUnit> shopUnitList = shopUnit.getChildren();
             for (ShopUnit currentUnit : shopUnitList) {
                 currentUnit.setParentId(null);
-                currentUnit.setDate(LocalDateTime.now());
+                currentUnit.setDate(OffsetDateTime.now());
                 saveShopUnit(currentUnit);
             }
         }

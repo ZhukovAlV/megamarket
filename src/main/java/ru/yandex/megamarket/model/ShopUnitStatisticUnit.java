@@ -2,15 +2,16 @@ package ru.yandex.megamarket.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class ShopUnitStatisticUnit {
 
     @Id
@@ -47,5 +48,5 @@ public class ShopUnitStatisticUnit {
     @NotNull
     @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
-    private LocalDateTime date;
+    private OffsetDateTime date;
 }

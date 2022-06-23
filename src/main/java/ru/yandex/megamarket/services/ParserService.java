@@ -9,7 +9,7 @@ import ru.yandex.megamarket.model.ShopUnitImport;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.model.ShopUnitType;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class ParserService {
     public List<ShopUnit> parseShopUnitImportRequest(ShopUnitImportRequest shopUnitImportRequest) {
 
         // Проверка даты на валидность
-        LocalDateTime dateUpdate = isIsoDate(shopUnitImportRequest.getUpdateDate());
+        OffsetDateTime dateUpdate = isIsoDate(shopUnitImportRequest.getUpdateDate());
 
         List<ShopUnit> listRes = new ArrayList<>();
         for (ShopUnitImport item : shopUnitImportRequest.getItems()) {
@@ -146,11 +146,10 @@ public class ParserService {
      * @param date дата
      * @return дата в формате LocalDateTime
      */
-    private static LocalDateTime isIsoDate(String date) {
+    private static OffsetDateTime isIsoDate(String date) {
         try {
-            date = date.replace('T', ' ').replace('Z', ' ').trim();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-            return LocalDateTime.parse(date, formatter);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS[xxx][xx][X]");
+            return OffsetDateTime.parse(date, formatter);
         } catch (DateTimeParseException e) {
             throw new ValidationFailedException();
         }

@@ -1,8 +1,10 @@
 package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.megamarket.exception.ItemNotFoundException;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.services.ShopUnitService;
@@ -26,7 +28,7 @@ public class ShopUnitController {
      * Изменение типа элемента с товара на категорию или с категории на товар не допускается.
      * Порядок элементов в запросе является произвольным.
      * @param shopUnitImportRequest Запрос с данными
-     * @return HttpStatus OK
+     * @return ResponseEntity со статусом ОК
      */
     @PostMapping(value = "/imports")
     public ResponseEntity<?> importItems(@RequestBody ShopUnitImportRequest shopUnitImportRequest) {
@@ -35,9 +37,9 @@ public class ShopUnitController {
     }
 
     /**
-     * Удаление объекта ShopUnit из базы
-     * @param id идентификатор ShopUnit
-     * @return HttpStatus OK
+     * Удаление товара или категории из базы
+     * @param id идентификатор товара или категории
+     * @return ResponseEntity со статусом ОК
      */
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteShopUnitById(@PathVariable String id) {
@@ -45,27 +47,23 @@ public class ShopUnitController {
         return ResponseEntity.ok().build();
     }
 
-/*    @GetMapping(value = "nodes/{id}", produces = "application/json")
-    public ResponseEntity<?> getItem(@PathVariable(name = "id") String id) {
-        if (id == null || id.equals("") || id.contains(" ")) {
-            return new ResponseEntity<>(new Error(404, "Validation Failed"), HttpStatus.BAD_REQUEST);
-        }
-        // TODO доделать shopUnitService.getInfoOfItemAndItsChildrenById
-        final ShopUnit shopUnit = shopUnitService.getInfoOfItemAndItsChildrenById(id);
-        return shopUnit != null ?
-                new ResponseEntity<>(shopUnit, HttpStatus.OK) :
-                new ResponseEntity<>(new Error(404, "Item not found"), HttpStatus.NOT_FOUND);
+    /**
+     * Вывод информации по товару или категории
+     * @param id идентификатор товара или категории
+     * @return ResponseEntity со статусом ОК
+     */
+    @GetMapping(value = "nodes/{id}")
+    public ResponseEntity<?> getShopUnit(@PathVariable("id") String id) {
+        ShopUnit shopUnit = shopUnitService.getShopUnitById(id).orElseThrow(ItemNotFoundException::new);
+        return new ResponseEntity<>(shopUnit, HttpStatus.OK);
     }
 
-    @GetMapping(value = "sales/{date}", produces = "application/json")
-    public ResponseEntity<?> salesOfPast24Hours(@PathVariable(name = "date") String date) {
-        // TODO доделать shopUnitService.getSalesOfPast24Hours
-        final ShopUnitStatisticResponse response = shopUnitService.getSalesOfPast24Hours(date);
-        return response == null ?
-                new ResponseEntity<>("no",HttpStatus.NOT_FOUND) :
-                new ResponseEntity<>(response, HttpStatus.OK);
+/*    @GetMapping("/sales")
+    public ResponseEntity<?> getUnitsByChangePriceLast24Hours(
+            @RequestParam(name = "date") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") String dateTime) {
+        ShopUnitStatisticResponse statistic = shopUnitService.getSalesStatistic(dateTime);
+        return new ResponseEntity<>(statistic, HttpStatus.OK);
     }*/
-
 
     /**
      * Вывод списка ShopUnit

@@ -2,12 +2,10 @@ package ru.yandex.megamarket.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,7 +13,8 @@ import java.util.UUID;
  * Объект товара или категории
  */
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShopUnit {
@@ -37,7 +36,7 @@ public class ShopUnit {
     @NotNull
     @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
-    private LocalDateTime date;
+    private OffsetDateTime date;
 
     /**
      * UUID родительской категории
@@ -79,7 +78,7 @@ public class ShopUnit {
             return this;
         }
 
-        public Builder withDate(LocalDateTime date){
+        public Builder withDate(OffsetDateTime date){
             newShopUnit.date = date;
             return this;
         }
