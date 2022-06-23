@@ -2,14 +2,13 @@ package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
+import ru.yandex.megamarket.model.ShopUnitType;
 import ru.yandex.megamarket.services.ShopUnitService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -32,7 +31,7 @@ public class ShopUnitController {
      * @return HttpStatus OK
      */
     @PostMapping(value = "/imports", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> importItems(ShopUnitImportRequest shopUnitImportRequest) {
+    public ResponseEntity<?> importItems(@RequestBody ShopUnitImportRequest shopUnitImportRequest) {
         shopUnitService.importShopUnitItems(shopUnitImportRequest);
         return ResponseEntity.ok().build();
     }
@@ -77,20 +76,30 @@ public class ShopUnitController {
      * @return список ShopUnit
      */
     @GetMapping(value = "/nodes")
-    @ResponseBody
     public  List<ShopUnit> getAllShopUnits() {
         return shopUnitService.getShopUnits();
     }
 
     // Сохранить в базе для теста
-/*    @GetMapping("/save")
-    public ModelAndView saveAllShopUnits() {
-        List<ShopUnit> shopUnitList = shopUnitService.getShopUnits();
-        for (ShopUnit shopUnit : shopUnitList) {
-            shopUnitService.saveShopUnit(shopUnit);
-        }
-        ModelAndView modelAndView = new ModelAndView("shopUnitList");
-        return modelAndView;
-    }*/
+    @GetMapping("/test")
+    public void saveAllShopUnits() {
+        ShopUnit shopUnitCat = new ShopUnit.Builder()
+                .withId("3fa85f64-5717-4562-b3fc-2c963f66a111")
+                .withName("Категория")
+                .withDate(LocalDateTime.now())
+                .withType(ShopUnitType.CATEGORY)
+                .build();
 
+        ShopUnit shopUnitOff = new ShopUnit.Builder()
+                .withId("3fa85f64-5717-4562-b3fc-2c963f66a222")
+                .withName("Категория")
+                .withDate(LocalDateTime.now())
+                .withParentId("3fa85f64-5717-4562-b3fc-2c963f66a111")
+                .withType(ShopUnitType.OFFER)
+                .withPrice(100L)
+                .build();
+
+        shopUnitService.saveShopUnit(shopUnitCat);
+        shopUnitService.saveShopUnit(shopUnitOff);
+    }
 }
