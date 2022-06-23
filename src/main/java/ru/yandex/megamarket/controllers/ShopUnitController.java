@@ -1,12 +1,15 @@
 package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.megamarket.exception.ItemNotFoundException;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
+import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
+import ru.yandex.megamarket.services.ParserService;
 import ru.yandex.megamarket.services.ShopUnitService;
 
 import java.util.List;
@@ -58,12 +61,12 @@ public class ShopUnitController {
         return new ResponseEntity<>(shopUnit, HttpStatus.OK);
     }
 
-/*    @GetMapping("/sales")
+    @GetMapping("/sales")
     public ResponseEntity<?> getUnitsByChangePriceLast24Hours(
-            @RequestParam(name = "date") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") String strDateTime) {
+            @RequestParam(name = "date") @DateTimeFormat(pattern = ParserService.FORMAT_DATE_TIME) String strDateTime) {
         ShopUnitStatisticResponse statistic = shopUnitService.getSalesStatisticFor24Hour(strDateTime);
         return new ResponseEntity<>(statistic, HttpStatus.OK);
-    }*/
+    }
 
     /**
      * Вывод списка ShopUnit

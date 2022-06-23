@@ -22,6 +22,8 @@ public class ParserService {
 
     private static final int LENGTH_UUID = 36;
 
+    public static final String FORMAT_DATE_TIME = "yyyy-MM-dd'T'HH:mm:ss.SSS[X]";
+
 /*    private final ShopUnitRepo shopUnitRepo;
 
     @Autowired
@@ -150,7 +152,7 @@ public class ParserService {
      */
     private static OffsetDateTime isIsoDate(String date) {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS[xxx][xx][X]");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FORMAT_DATE_TIME);
             return OffsetDateTime.parse(date, formatter);
         } catch (DateTimeParseException e) {
             throw new ValidationFailedException();

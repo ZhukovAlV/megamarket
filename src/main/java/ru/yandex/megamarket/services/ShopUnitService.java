@@ -66,11 +66,11 @@ public class ShopUnitService {
         return result;
     }
 
-/*    public List<ShopUnitStatisticResponse> getSalesStatisticFor24Hour(String strDateTime) {
-        List<ShopUnitStatisticResponse> result = new ArrayList<>();
-
-        return result;
-    }*/
+    public ShopUnitStatisticResponse getSalesStatisticFor24Hour(String strDateTime) {
+        ShopUnitStatisticResponse shopUnitStatisticResponse = new ShopUnitStatisticResponse();
+        // TODO доделать
+        return shopUnitStatisticResponse;
+    }
 
     /**
      * Сохранение объекта в БД

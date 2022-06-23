@@ -3,6 +3,7 @@ package ru.yandex.megamarket.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
 import lombok.*;
+import ru.yandex.megamarket.services.ParserService;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
@@ -48,6 +49,6 @@ public class ShopUnitStatisticUnit {
      */
     @NotNull
     @Column(nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS[xxx][xx][X]")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ParserService.FORMAT_DATE_TIME)
     private OffsetDateTime date;
 }
