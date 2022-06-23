@@ -78,16 +78,18 @@ public class ParserService {
      */
     public void addChildrenToParents(List<ShopUnit> listShopUnit) {
         for (int i = 0; i < listShopUnit.size(); i++) {
+
+            // Для пустой категории поле children равно пустому массиву, а для товара оставляем null
+            if (listShopUnit.get(i).getChildren() == null
+                    && listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY)) listShopUnit.get(i).setChildren(new ArrayList<>());
+
             for (ShopUnit shopUnit : listShopUnit) {
                 if (shopUnit.getParentId() != null
                         && listShopUnit.get(i).getId().equals(shopUnit.getParentId())) {
                     // Если объект НЕ КАТЕГОРИЯ имеет детей выдаем ошибку иначе добавляем ему ребенка
                     if (!listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY))
                         throw new ValidationFailedException();
-                    else {
-                        if (listShopUnit.get(i).getChildren() == null) listShopUnit.get(i).setChildren(new ArrayList<>());
-                        listShopUnit.get(i).getChildren().add(shopUnit);
-                    }
+                    else listShopUnit.get(i).getChildren().add(shopUnit);
                 }
             }
         }
