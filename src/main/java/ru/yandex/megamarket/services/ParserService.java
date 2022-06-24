@@ -1,6 +1,7 @@
 package ru.yandex.megamarket.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.megamarket.exception.ItemNotFoundException;
 import ru.yandex.megamarket.exception.ValidationFailedException;
@@ -8,6 +9,7 @@ import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImport;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.model.ShopUnitType;
+import ru.yandex.megamarket.repository.ShopUnitRepo;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,12 +26,12 @@ public class ParserService {
 
     public static final String FORMAT_DATE_TIME = "yyyy-MM-dd'T'HH:mm:ss.SSS[X]";
 
-/*    private final ShopUnitRepo shopUnitRepo;
+    private final ShopUnitRepo shopUnitRepo;
 
     @Autowired
     public ParserService(ShopUnitRepo shopUnitRepo) {
         this.shopUnitRepo = shopUnitRepo;
-    }*/
+    }
 
     /**
      * Парсер для ShopUnitImportRequest
@@ -85,14 +87,28 @@ public class ParserService {
             if (listShopUnit.get(i).getChildren() == null
                     && listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY)) listShopUnit.get(i).setChildren(new ArrayList<>());
 
-            for (ShopUnit shopUnit : listShopUnit) {
-                if (shopUnit.getParentId() != null
-                        && listShopUnit.get(i).getId().equals(shopUnit.getParentId())) {
-                    // Если объект НЕ КАТЕГОРИЯ имеет детей выдаем ошибку иначе добавляем ему ребенка
-                    if (!listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY))
-                        throw new ValidationFailedException();
-                    else listShopUnit.get(i).getChildren().add(shopUnit);
-                }
+            addChildren(listShopUnit, i);
+
+            // То же самое делаем с уже имеющимися объектами в БД
+            List<ShopUnit> listShopUnitFromBD = new ArrayList<>();
+            shopUnitRepo.findAll().forEach(listShopUnitFromBD::add);
+            addChildren(listShopUnitFromBD, i);
+        }
+    }
+
+    /**
+     * Добавление дочерних объектов список объектов ShopUnit из списка и из БД
+     * @param listShopUnit список объектов ShopUnit
+     * @param i Порядковый номер объекта ShopUnit, в который добавляем дочерние объекты
+     */
+    public void addChildren(List<ShopUnit> listShopUnit, int i) {
+        for (ShopUnit shopUnit : listShopUnit) {
+            if (shopUnit.getParentId() != null
+                    && listShopUnit.get(i).getId().equals(shopUnit.getParentId())) {
+                // Если объект НЕ КАТЕГОРИЯ имеет детей выдаем ошибку иначе добавляем ему ребенка
+                if (!listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY))
+                    throw new ValidationFailedException();
+                else listShopUnit.get(i).getChildren().add(shopUnit);
             }
         }
     }
