@@ -8,13 +8,11 @@ import ru.yandex.megamarket.exception.ItemNotFoundException;
 import ru.yandex.megamarket.model.ShopUnit;
 import ru.yandex.megamarket.model.ShopUnitImportRequest;
 import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
+import ru.yandex.megamarket.model.ShopUnitType;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -35,6 +33,15 @@ public class ShopUnitService {
      */
     public void importShopUnitItems(ShopUnitImportRequest shopUnitImportRequest) {
         List<ShopUnit> shopUnits = parser.parseShopUnitImportRequest(shopUnitImportRequest);
+
+        // Заполняем среднюю цену категориям
+        for (ShopUnit shopUnit : shopUnits) {
+            if (shopUnit.getType().equals(ShopUnitType.CATEGORY)) {
+                // Выставляем среднюю цену нашей категории
+                shopUnit.setPrice(getAveragePriceFromList(shopUnit.getChildren()));
+            }
+        }
+
         shopUnitRepo.saveAll(shopUnits);
     }
 
@@ -45,6 +52,37 @@ public class ShopUnitService {
      */
     public Optional<ShopUnit> getShopUnitById(UUID id) {
         return shopUnitRepo.findById(id);
+    }
+
+    /**
+     * Средняя цена всех дочерних элементов категории (+ дочерних элементов самих дочерних элементов)
+     * @param listShopUnit Список дочерних элементов категории
+     * @return Long средняя цена
+     */
+    public Long getAveragePriceFromList(List<ShopUnit> listShopUnit) {
+        List<Long> listPrice = getPricesFromList(listShopUnit);
+        double averagePrice = listPrice.stream()
+                .mapToLong(Long::longValue)
+                .summaryStatistics().getAverage();
+        return Double.valueOf(averagePrice).longValue();
+    }
+
+    /**
+     * Список цен по категории
+     * @param listShopUnit Список товаров и/или категорий
+     * @return Список цен по категории
+     */
+    public List<Long> getPricesFromList(List<ShopUnit> listShopUnit) {
+        List<Long> listPrice = new ArrayList<>();
+        for (ShopUnit child : listShopUnit) {
+            // Если это товар то просто добавляем цену, иначе снова запускаем этот метод
+            if (child.getType().equals(ShopUnitType.OFFER)) listPrice.add(child.getPrice());
+            else if (!child.getChildren().isEmpty()) {
+                List<Long> listChildrenPrice = getPricesFromList(child.getChildren());
+                listPrice.addAll(listChildrenPrice);
+            }
+        }
+        return listPrice;
     }
 
     /**
@@ -93,6 +131,13 @@ public class ShopUnitService {
         updateChildrenItem(shopUnit);
 
         shopUnitRepo.delete(shopUnit);
+
+        // Обновляем у родительской категории среднюю цену после удаления дочернего элемента
+        var parentShopUnit = shopUnitRepo.findById(shopUnit.getParentId());
+        if (parentShopUnit.isPresent() && !parentShopUnit.get().getChildren().isEmpty()) {
+            parentShopUnit.get().setPrice(getAveragePriceFromList(parentShopUnit.get().getChildren()));
+            shopUnitRepo.save(parentShopUnit.get());
+        }
     }
 
     /**
