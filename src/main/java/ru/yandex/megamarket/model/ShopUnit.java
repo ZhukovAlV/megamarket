@@ -71,7 +71,7 @@ public class ShopUnit {
     /**
      * Список всех дочерних товаров\категорий. Для товаров поле равно null.
      */
-    @OneToMany(cascade = {CascadeType.REFRESH}, mappedBy = "parentId")
+    @OneToMany(cascade = {CascadeType.REFRESH, CascadeType.MERGE}, mappedBy = "parentId")
     private List<ShopUnit> children;
 
     // Считаем объекты одинаковыми, если у них одинаковый UUID
