@@ -41,7 +41,7 @@ public class ShopUnitService {
      * @param shopUnits список категорий и товаров
      */
     public void updateAveragePrice(List<ShopUnit> shopUnits) {
-        Set<UUID> setParentId = new HashSet<>();
+        Set<UUID> hashSetParentId = new HashSet<>();
 
         for (ShopUnit shopUnit : shopUnits) {
             if (shopUnit.getType().equals(ShopUnitType.CATEGORY)) {
@@ -49,15 +49,26 @@ public class ShopUnitService {
                 shopUnit.setPrice(getAveragePriceFromList(shopUnit.getChildren()));
                 // Собираем список ID родителей (parentId) товаров, которые были изменены
             } else {
-                setParentId.add(shopUnit.getParentId());
+                addParentIdInSet(hashSetParentId, shopUnit.getParentId());
             }
         }
         shopUnitRepo.saveAll(shopUnits);
 
         // Дополнительно обновляем среднюю цену РОДИТЕЛЬСКИМ категориям товаров, которые изменялись
         List<ShopUnit> shopCat= new ArrayList<>();
-        setParentId.forEach(elem -> shopCat.add(shopUnitRepo.findById(elem).get()));
+        hashSetParentId.forEach(elem -> shopCat.add(shopUnitRepo.findById(elem).get()));
         if (!shopCat.isEmpty()) updateAveragePrice(shopCat);
+    }
+
+    /**
+     * Добавление родителя категории, если имеется в список на обновление средней цены
+     * @param hashSetParentId SET с категориями на обновление
+     * @param uuid uuid категории
+     */
+    public void addParentIdInSet(Set<UUID> hashSetParentId, UUID uuid) {
+        var category = shopUnitRepo.findById(uuid);
+        if (category.isPresent() && category.get().getParentId() != null) addParentIdInSet(hashSetParentId, category.get().getParentId());
+        else hashSetParentId.add(uuid);
     }
 
     /**
