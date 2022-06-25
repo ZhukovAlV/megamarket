@@ -11,8 +11,10 @@ import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
 import ru.yandex.megamarket.model.ShopUnitType;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
-import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -127,31 +129,29 @@ public class ShopUnitService {
         UUID uuid = parser.stringToUUID(id);
         ShopUnit shopUnit = shopUnitRepo.findById(uuid).orElseThrow(ItemNotFoundException::new);
 
-        // Удаляем ссылку на этот parentId у дочерних объектов
-        updateChildrenItem(shopUnit);
+        // При удалении категории удаляются все дочерние элементы
+        if (shopUnit.getType().equals(ShopUnitType.CATEGORY)) deleteChildrenItem(shopUnit);
 
         shopUnitRepo.delete(shopUnit);
 
         // Обновляем у родительской категории среднюю цену после удаления дочернего элемента
-        var parentShopUnit = shopUnitRepo.findById(shopUnit.getParentId());
-        if (parentShopUnit.isPresent() && !parentShopUnit.get().getChildren().isEmpty()) {
-            parentShopUnit.get().setPrice(getAveragePriceFromList(parentShopUnit.get().getChildren()));
-            shopUnitRepo.save(parentShopUnit.get());
+        if (shopUnit.getParentId() != null) {
+            Optional<ShopUnit> parentShopUnit = shopUnitRepo.findById(shopUnit.getParentId());
+            if (parentShopUnit.isPresent() && !parentShopUnit.get().getChildren().isEmpty()) {
+                parentShopUnit.get().setPrice(getAveragePriceFromList(parentShopUnit.get().getChildren()));
+                shopUnitRepo.save(parentShopUnit.get());
+            }
         }
     }
 
     /**
-     * Выставляем null в parentID удаленного объекта и обновляем дату
-     * @param shopUnit объект ShopUnit, который проверяем на наличие children
+     * Удаление всех дочерних элементов
+     * @param shopUnit объект категории ShopUnit, который проверяем на наличие children
      */
-    private void updateChildrenItem(ShopUnit shopUnit) {
-        if (shopUnit.getChildren() != null && shopUnit.getChildren().size() > 0) {
+    private void deleteChildrenItem(ShopUnit shopUnit) {
+        if (!shopUnit.getChildren().isEmpty()) {
             List<ShopUnit> shopUnitList = shopUnit.getChildren();
-            for (ShopUnit currentUnit : shopUnitList) {
-                currentUnit.setParentId(null);
-                currentUnit.setDate(OffsetDateTime.now());
-                saveShopUnit(currentUnit);
-            }
+            shopUnitRepo.deleteAll(shopUnitList);
         }
     }
 }
