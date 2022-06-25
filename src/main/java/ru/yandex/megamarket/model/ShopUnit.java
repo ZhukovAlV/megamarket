@@ -2,7 +2,10 @@ package ru.yandex.megamarket.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.yandex.megamarket.services.ParserService;
 
 import javax.persistence.*;
@@ -38,6 +41,14 @@ public class ShopUnit {
     @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ParserService.FORMAT_DATE_TIME)
     private OffsetDateTime date;
+
+    /**
+     * Время последнего обновления цены
+     */
+    @NotNull
+    @Column(nullable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ParserService.FORMAT_DATE_TIME)
+    private OffsetDateTime lastPriceUpdatedDate;
 
     /**
      * UUID родительской категории
@@ -81,6 +92,11 @@ public class ShopUnit {
 
         public Builder withDate(OffsetDateTime date){
             newShopUnit.date = date;
+            return this;
+        }
+
+        public Builder withLastPriceUpdatedDate(OffsetDateTime lastPriceUpdatedDate){
+            newShopUnit.lastPriceUpdatedDate = lastPriceUpdatedDate;
             return this;
         }
 

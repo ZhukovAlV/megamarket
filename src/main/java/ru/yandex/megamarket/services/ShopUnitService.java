@@ -11,6 +11,8 @@ import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
 import ru.yandex.megamarket.model.ShopUnitType;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -106,9 +108,15 @@ public class ShopUnitService {
         return result;
     }
 
-    public ShopUnitStatisticResponse getSalesStatisticFor24Hour(String strDateTime) {
+    public ShopUnitStatisticResponse getSalesStatisticFor24Hour() {
         ShopUnitStatisticResponse shopUnitStatisticResponse = new ShopUnitStatisticResponse();
         // TODO доделать
+
+        OffsetDateTime endDate = OffsetDateTime.now();
+        System.out.println(endDate);
+        OffsetDateTime startDate = OffsetDateTime.now().minus(1, ChronoUnit.DAYS);
+        System.out.println(startDate);
+
         return shopUnitStatisticResponse;
     }
 

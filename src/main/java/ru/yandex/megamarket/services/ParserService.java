@@ -41,7 +41,7 @@ public class ParserService {
     public List<ShopUnit> parseShopUnitImportRequest(ShopUnitImportRequest shopUnitImportRequest) {
 
         // Проверка даты на валидность
-        OffsetDateTime dateUpdate = isIsoDate(shopUnitImportRequest.getUpdateDate());
+        OffsetDateTime dateUpdate = getIsoDate(shopUnitImportRequest.getUpdateDate());
 
         List<ShopUnit> listRes = new ArrayList<>();
         for (ShopUnitImport item : shopUnitImportRequest.getItems()) {
@@ -49,6 +49,7 @@ public class ParserService {
                     .withId(stringToUUID(item.getId()))
                     .withName(item.getName())
                     .withDate(dateUpdate)
+                    .withLastPriceUpdatedDate(dateUpdate)
                     .withParentId(stringToUUID(item.getParentId()))
                     .withType(item.getType())
                     .withPrice(item.getPrice())
@@ -166,7 +167,7 @@ public class ParserService {
      * @param date дата
      * @return дата в формате LocalDateTime
      */
-    private static OffsetDateTime isIsoDate(String date) {
+    public OffsetDateTime getIsoDate(String date) {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FORMAT_DATE_TIME);
             return OffsetDateTime.parse(date, formatter);
