@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -43,25 +44,70 @@ public class ParserService {
         // Проверка даты на валидность
         OffsetDateTime dateUpdate = getIsoDate(shopUnitImportRequest.getUpdateDate());
 
+        // Достаем разово все товары из базы, чтобы по каждому товару не делать запрос
+        List<ShopUnit> listShopUnitFromBD = new ArrayList<>();
+        shopUnitRepo.findAll().forEach(listShopUnitFromBD::add);
+
+        // Создаем список только с UUID для более быстрого поиска по UUID
+        List<UUID> listUUID = listShopUnitFromBD.stream().map(ShopUnit::getId).toList();
+
         List<ShopUnit> listRes = new ArrayList<>();
         for (ShopUnitImport item : shopUnitImportRequest.getItems()) {
-            ShopUnit shopUnit = new ShopUnit.Builder()
-                    .withId(stringToUUID(item.getId()))
-                    .withName(item.getName())
-                    .withDate(dateUpdate)
-                    .withLastPriceUpdatedDate(dateUpdate)
-                    .withParentId(stringToUUID(item.getParentId()))
-                    .withType(item.getType())
-                    .withPrice(item.getPrice())
-                    .build();
-            listRes.add(shopUnit);
+            UUID uuid = stringToUUID(item.getId());
+            boolean unitExistInDB = listUUID.contains(uuid);
+
+            // Если такого товара в базе нет то создаем новый
+            if (!unitExistInDB && item.getType().equals(ShopUnitType.OFFER)) {
+                ShopUnit shopUnit = new ShopUnit.Builder()
+                        .withId(uuid)
+                        .withName(item.getName())
+                        .withDate(dateUpdate)
+                        .withLastPriceUpdatedDate(dateUpdate)
+                        .withParentId(stringToUUID(item.getParentId()))
+                        .withType(item.getType())
+                        .withPrice(item.getPrice())
+                        .build();
+                listRes.add(shopUnit);
+            // Иначе проверяем была ли изменена цена и создаем товар с определенной датой изменения цены
+            } else if (item.getType().equals(ShopUnitType.OFFER)) {
+                Optional<ShopUnit> shopUnitFromBD = listShopUnitFromBD.stream()
+                        .filter(elem -> elem.getId().equals(uuid)).findFirst();
+
+                // Если цена не менялась дату изменения цены оставляем прежней
+                OffsetDateTime updatePriceDate;
+                if (shopUnitFromBD.get().getPrice().equals(item.getPrice())) {
+                    updatePriceDate = shopUnitFromBD.get().getLastPriceUpdatedDate();
+                } else updatePriceDate = dateUpdate;
+
+                ShopUnit shopUnit = new ShopUnit.Builder()
+                        .withId(uuid)
+                        .withName(item.getName())
+                        .withDate(dateUpdate)
+                        .withLastPriceUpdatedDate(updatePriceDate)
+                        .withParentId(stringToUUID(item.getParentId()))
+                        .withType(item.getType())
+                        .withPrice(item.getPrice())
+                        .build();
+                listRes.add(shopUnit);
+            } else {
+                // Если это категория, то дату изменения цены не заполняем
+                ShopUnit shopUnit = new ShopUnit.Builder()
+                        .withId(uuid)
+                        .withName(item.getName())
+                        .withDate(dateUpdate)
+                        .withParentId(stringToUUID(item.getParentId()))
+                        .withType(item.getType())
+                        .withPrice(item.getPrice())
+                        .build();
+                listRes.add(shopUnit);
+            }
         }
 
         // Проверяем корректность данных
-        validate(listRes);
+        validate(listRes, listShopUnitFromBD);
 
         // Наполняем дочерние объекты у родителей, поле children
-        addChildrenToParents(listRes);
+        addChildrenToParents(listRes, listShopUnitFromBD);
 
         return listRes;
     }
@@ -81,19 +127,21 @@ public class ParserService {
      * Наполнение дочерние объекты у родителей
      * @param listShopUnit список объектов ShopUnit
      */
-    public void addChildrenToParents(List<ShopUnit> listShopUnit) {
+    public void addChildrenToParents(List<ShopUnit> listShopUnit, List<ShopUnit> listShopUnitFromBD) {
+        // Для пустой категории поле children равно пустому массиву, а для товара оставляем null
         for (int i = 0; i < listShopUnit.size(); i++) {
 
-            // Для пустой категории поле children равно пустому массиву, а для товара оставляем null
-            if (listShopUnit.get(i).getChildren() == null
-                    && listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY)) listShopUnit.get(i).setChildren(new ArrayList<>());
+            if (listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY)) {
+                if (listShopUnit.get(i).getChildren() == null) listShopUnit.get(i).setChildren(new ArrayList<>());
 
-            addChildren(listShopUnit, i);
+                // Выставляем дочерних детей из массива
+                addChildren(listShopUnit, i);
+                // То же самое делаем с уже имеющимися объектами из БД
+                addChildren(listShopUnitFromBD, i);
 
-            // То же самое делаем с уже имеющимися объектами в БД
-            List<ShopUnit> listShopUnitFromBD = new ArrayList<>();
-            shopUnitRepo.findAll().forEach(listShopUnitFromBD::add);
-            addChildren(listShopUnitFromBD, i);
+            // Если объект НЕ КАТЕГОРИЯ и имеет детей выдаем ошибку
+            } else if ((listShopUnit.get(i).getType().equals(ShopUnitType.OFFER)
+                    && listShopUnit.get(i).getChildren() != null)) throw new ValidationFailedException();
         }
     }
 
@@ -106,10 +154,7 @@ public class ParserService {
         for (ShopUnit shopUnit : listShopUnit) {
             if (shopUnit.getParentId() != null
                     && listShopUnit.get(i).getId().equals(shopUnit.getParentId())) {
-                // Если объект НЕ КАТЕГОРИЯ имеет детей выдаем ошибку иначе добавляем ему ребенка
-                if (!listShopUnit.get(i).getType().equals(ShopUnitType.CATEGORY))
-                    throw new ValidationFailedException();
-                else listShopUnit.get(i).getChildren().add(shopUnit);
+                listShopUnit.get(i).getChildren().add(shopUnit);
             }
         }
     }
@@ -118,7 +163,7 @@ public class ParserService {
      * Валидация данных
      * @param list список ShopUnit
      */
-    public void validate(List<ShopUnit> list) {
+    public void validate(List<ShopUnit> list, List<ShopUnit> listShopUnitFromBD) {
         // Проверка массива на содержание объектов
         if (list.size() < 1) throw new ItemNotFoundException();
 
@@ -129,8 +174,8 @@ public class ParserService {
                     || shopUnit.getType() == null) throw new ValidationFailedException();
 
             // У категорий поле price должно содержать null
-            if (shopUnit.getType().equals(ShopUnitType.CATEGORY)
-                    && shopUnit.getPrice() != null) throw new ValidationFailedException();
+/*            if (shopUnit.getType().equals(ShopUnitType.CATEGORY)
+                    && shopUnit.getPrice() != null) throw new ValidationFailedException();*/
 
             // Цена товара не может быть null и должна быть больше либо равна нулю.
             if (shopUnit.getType().equals(ShopUnitType.OFFER)
@@ -141,7 +186,7 @@ public class ParserService {
             if (count > 1) throw new ValidationFailedException();
 
             // Родителем товара или категории может быть только категория
-            if (shopUnit.getParentId() != null) isParentCategory(list, shopUnit);
+            if (shopUnit.getParentId() != null) isParentCategory(list, listShopUnitFromBD, shopUnit);
         }
     }
 
@@ -150,8 +195,9 @@ public class ParserService {
      * @param list список ShopUnit
      * @param shopUnit объект ShopUnit, parentId которого проверяем
      */
-    public void isParentCategory(List<ShopUnit> list, ShopUnit shopUnit) {
+    public void isParentCategory(List<ShopUnit> list, List<ShopUnit> listShopUnitFromBD, ShopUnit shopUnit) {
         boolean isParentCategory = false;
+        // Сперва ищем родителя в списке на импорт
         for (ShopUnit item : list) {
             if (shopUnit.getParentId().equals(item.getId())
                     && item.getType().equals(ShopUnitType.CATEGORY)) {
@@ -159,6 +205,17 @@ public class ParserService {
                 break;
             }
         }
+        // Затем прогоняем по списку из базы данных, если родитель не нашелся
+        if (!isParentCategory) {
+            for (ShopUnit itemFromBD : listShopUnitFromBD) {
+                if (shopUnit.getParentId().equals(itemFromBD.getId())
+                        && itemFromBD.getType().equals(ShopUnitType.CATEGORY)) {
+                    isParentCategory = true;
+                    break;
+                }
+            }
+        }
+
         if (!isParentCategory) throw new ValidationFailedException();
     }
 

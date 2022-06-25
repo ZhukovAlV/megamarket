@@ -13,10 +13,7 @@ import ru.yandex.megamarket.repository.ShopUnitRepo;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -39,14 +36,31 @@ public class ShopUnitService {
         List<ShopUnit> shopUnits = parser.parseShopUnitImportRequest(shopUnitImportRequest);
 
         // Заполняем среднюю цену категориям
+        updateAveragePrice(shopUnits);
+    }
+
+    /**
+     * Заполнение средней цены
+     * @param shopUnits список категорий и товаров
+     */
+    public void updateAveragePrice(List<ShopUnit> shopUnits) {
+        Set<UUID> setParentId = new HashSet<>();
+
         for (ShopUnit shopUnit : shopUnits) {
             if (shopUnit.getType().equals(ShopUnitType.CATEGORY)) {
                 // Выставляем среднюю цену нашей категории
                 shopUnit.setPrice(getAveragePriceFromList(shopUnit.getChildren()));
+                // Собираем список ID родителей (parentId) товаров, которые были изменены
+            } else {
+                setParentId.add(shopUnit.getParentId());
             }
         }
-
         shopUnitRepo.saveAll(shopUnits);
+
+        // Дополнительно обновляем среднюю цену РОДИТЕЛЬСКИМ категориям товаров, которые изменялись
+        List<ShopUnit> shopCat= new ArrayList<>();
+        setParentId.forEach(elem -> shopCat.add(shopUnitRepo.findById(elem).get()));
+        if (!shopCat.isEmpty()) updateAveragePrice(shopCat);
     }
 
     /**
