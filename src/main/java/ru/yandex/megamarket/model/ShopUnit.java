@@ -11,6 +11,7 @@ import ru.yandex.megamarket.services.ParserService;
 import javax.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -70,8 +71,22 @@ public class ShopUnit {
     /**
      * Список всех дочерних товаров\категорий. Для товаров поле равно null.
      */
-    @OneToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH}, mappedBy = "parentId")
+    @OneToMany(cascade = {CascadeType.REFRESH}, mappedBy = "parentId")
     private List<ShopUnit> children;
+
+    // Считаем объекты одинаковыми, если у них одинаковый UUID
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ShopUnit shopUnit = (ShopUnit) o;
+        return id.equals(shopUnit.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 
     public static class Builder {
         private final ShopUnit newShopUnit;

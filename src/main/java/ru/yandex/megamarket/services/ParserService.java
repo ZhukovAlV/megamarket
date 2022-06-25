@@ -39,14 +39,10 @@ public class ParserService {
      * @param shopUnitImportRequest запрос с объектами ShopUnitImport
      * @return List<ShopUnit> список объектов ShopUnit
      */
-    public List<ShopUnit> parseShopUnitImportRequest(ShopUnitImportRequest shopUnitImportRequest) {
+    public List<ShopUnit> parseShopUnitImportRequest(ShopUnitImportRequest shopUnitImportRequest, List<ShopUnit> listShopUnitFromBD) {
 
         // Проверка даты на валидность
         OffsetDateTime dateUpdate = getIsoDate(shopUnitImportRequest.getUpdateDate());
-
-        // Достаем разово все товары из базы, чтобы по каждому товару не делать запрос
-        List<ShopUnit> listShopUnitFromBD = new ArrayList<>();
-        shopUnitRepo.findAll().forEach(listShopUnitFromBD::add);
 
         // Создаем список только с UUID для более быстрого поиска по UUID
         List<UUID> listUUID = listShopUnitFromBD.stream().map(ShopUnit::getId).toList();
@@ -137,7 +133,7 @@ public class ParserService {
                 // Выставляем дочерних детей из массива
                 addChildren(listShopUnit, i);
                 // То же самое делаем с уже имеющимися объектами из БД
-                addChildren(listShopUnitFromBD, i);
+                addChildren(listShopUnit, listShopUnitFromBD, i);
 
             // Если объект НЕ КАТЕГОРИЯ и имеет детей выдаем ошибку
             } else if ((listShopUnit.get(i).getType().equals(ShopUnitType.OFFER)
@@ -155,6 +151,15 @@ public class ParserService {
             if (shopUnit.getParentId() != null
                     && listShopUnit.get(i).getId().equals(shopUnit.getParentId())) {
                 listShopUnit.get(i).getChildren().add(shopUnit);
+            }
+        }
+    }
+
+    public void addChildren(List<ShopUnit> listShopUnit, List<ShopUnit> listShopUnitFromBD, int i) {
+        for (ShopUnit shopUnitBD : listShopUnitFromBD) {
+            if (shopUnitBD.getParentId() != null
+                    && listShopUnit.get(i).getId().equals(shopUnitBD.getParentId())) {
+                listShopUnit.get(i).getChildren().add(shopUnitBD);
             }
         }
     }
