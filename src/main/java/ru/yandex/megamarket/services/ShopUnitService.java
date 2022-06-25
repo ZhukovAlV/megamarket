@@ -151,6 +151,12 @@ public class ShopUnitService {
     private void deleteChildrenItem(ShopUnit shopUnit) {
         if (!shopUnit.getChildren().isEmpty()) {
             List<ShopUnit> shopUnitList = shopUnit.getChildren();
+
+            // Если у дочерней категории имеются категории, то их товары тоже удаляем
+            for (ShopUnit unit : shopUnitList) {
+                if (unit.getType().equals(ShopUnitType.CATEGORY)) deleteChildrenItem(unit);
+            }
+
             shopUnitRepo.deleteAll(shopUnitList);
         }
     }
