@@ -46,7 +46,6 @@ public class ShopUnit {
      * Время последнего обновления цены
      */
     @NotNull
-    @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ParserService.FORMAT_DATE_TIME)
     private OffsetDateTime lastPriceUpdatedDate;
 
