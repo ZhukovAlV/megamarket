@@ -119,16 +119,22 @@ public class ShopUnitService {
         return result;
     }
 
+    /**
+     * Поиск товаров, цена которых менялась последние 24 часа
+     * @return ShopUnitStatisticResponse со списком товаров
+     */
     public ShopUnitStatisticResponse getSalesStatisticFor24Hour() {
         ShopUnitStatisticResponse shopUnitStatisticResponse = new ShopUnitStatisticResponse();
 
+        // Выставляем дату начала и окончания поиска
         OffsetDateTime startDate = OffsetDateTime.now().minus(1, ChronoUnit.DAYS);
         System.out.println(startDate);
         OffsetDateTime endDate = OffsetDateTime.now();
         System.out.println(endDate);
 
-        // Заполняем наш shopUnitStatisticResponse объектами ShopUnitStatisticUnit, созданными из itemsList
+        // Осуществляем поиск, используя Between нашего репозитория
         List<ShopUnit> itemsList = shopUnitRepo.findAllByTypeAndLastPriceUpdatedDateBetween(ShopUnitType.OFFER, startDate, endDate);
+        // Заполняем наш shopUnitStatisticResponse объектами ShopUnitStatisticUnit, созданными из itemsList
         itemsList.forEach(elem -> shopUnitStatisticResponse.getItems().add(
                 new ShopUnitStatisticUnit(elem.getId(), elem.getName(), elem.getParentId(),
                         elem.getType(), elem.getPrice(), elem.getDate())));
