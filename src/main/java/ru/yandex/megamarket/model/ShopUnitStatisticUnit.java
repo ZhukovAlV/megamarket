@@ -7,6 +7,7 @@ import ru.yandex.megamarket.services.ParserService;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -17,7 +18,7 @@ public class ShopUnitStatisticUnit {
 
     @Id
     @Column(updatable = false, nullable = false)
-    private String id;
+    private UUID id;
 
     /**
      * Имя элемента
@@ -29,7 +30,7 @@ public class ShopUnitStatisticUnit {
     /**
      * UUID родительской категории
      */
-    private String parentId;
+    private UUID parentId;
 
     @NotNull
     @Column(nullable = false)

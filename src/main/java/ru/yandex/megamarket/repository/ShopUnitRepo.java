@@ -12,5 +12,5 @@ import java.util.UUID;
 @Repository
 public interface ShopUnitRepo extends CrudRepository<ShopUnit, UUID> {
 
-    List<ShopUnit> findAllByTypeAndDateBetween(ShopUnitType type, OffsetDateTime start, OffsetDateTime to);
+    List<ShopUnit> findAllByTypeAndLastPriceUpdatedDateBetween(ShopUnitType type, OffsetDateTime startDate, OffsetDateTime endDate);
 }

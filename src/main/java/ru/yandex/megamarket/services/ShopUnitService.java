@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.megamarket.exception.ItemNotFoundException;
-import ru.yandex.megamarket.model.ShopUnit;
-import ru.yandex.megamarket.model.ShopUnitImportRequest;
-import ru.yandex.megamarket.model.ShopUnitStatisticResponse;
-import ru.yandex.megamarket.model.ShopUnitType;
+import ru.yandex.megamarket.model.*;
 import ru.yandex.megamarket.repository.ShopUnitRepo;
 
 import java.time.OffsetDateTime;
@@ -124,12 +121,17 @@ public class ShopUnitService {
 
     public ShopUnitStatisticResponse getSalesStatisticFor24Hour() {
         ShopUnitStatisticResponse shopUnitStatisticResponse = new ShopUnitStatisticResponse();
-        // TODO доделать
 
-        OffsetDateTime endDate = OffsetDateTime.now();
-        System.out.println(endDate);
         OffsetDateTime startDate = OffsetDateTime.now().minus(1, ChronoUnit.DAYS);
         System.out.println(startDate);
+        OffsetDateTime endDate = OffsetDateTime.now();
+        System.out.println(endDate);
+
+        // Заполняем наш shopUnitStatisticResponse объектами ShopUnitStatisticUnit, созданными из itemsList
+        List<ShopUnit> itemsList = shopUnitRepo.findAllByTypeAndLastPriceUpdatedDateBetween(ShopUnitType.OFFER, startDate, endDate);
+        itemsList.forEach(elem -> shopUnitStatisticResponse.getItems().add(
+                new ShopUnitStatisticUnit(elem.getId(), elem.getName(), elem.getParentId(),
+                        elem.getType(), elem.getPrice(), elem.getDate())));
 
         return shopUnitStatisticResponse;
     }
