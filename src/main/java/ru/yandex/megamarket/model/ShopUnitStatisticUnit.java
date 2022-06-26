@@ -2,8 +2,11 @@ package ru.yandex.megamarket.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sun.istack.NotNull;
-import lombok.*;
-import ru.yandex.megamarket.services.ImportShopUnitService;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import ru.yandex.megamarket.services.ParserService;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
@@ -50,6 +53,6 @@ public class ShopUnitStatisticUnit {
      */
     @NotNull
     @Column(nullable = false)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ImportShopUnitService.FORMAT_DATE_TIME)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ParserService.FORMAT_DATE_TIME)
     private OffsetDateTime date;
 }
