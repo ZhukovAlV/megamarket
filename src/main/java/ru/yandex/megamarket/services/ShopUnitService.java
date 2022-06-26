@@ -12,6 +12,8 @@ import ru.yandex.megamarket.repository.ShopUnitRepo;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Slf4j
@@ -310,14 +312,13 @@ public class ShopUnitService {
      * Поиск товаров, цена которых менялась последние 24 часа
      * @return ShopUnitStatisticResponse со списком товаров
      */
-    public ShopUnitStatisticResponse getSalesStatisticFor24Hour() {
+    public ShopUnitStatisticResponse getSalesStatisticFor24Hour(String stringDate) {
+        checkDateFormat(stringDate);
+        OffsetDateTime endDate = parserService.getIsoDate(stringDate);
         ShopUnitStatisticResponse shopUnitStatisticResponse = new ShopUnitStatisticResponse();
 
         // Выставляем дату начала и окончания поиска
-        OffsetDateTime startDate = OffsetDateTime.now().minus(1, ChronoUnit.DAYS);
-        System.out.println(startDate);
-        OffsetDateTime endDate = OffsetDateTime.now();
-        System.out.println(endDate);
+        OffsetDateTime startDate = endDate.minus(1, ChronoUnit.DAYS);
 
         // Осуществляем поиск, используя Between нашего репозитория
         List<ShopUnit> itemsList = shopUnitRepo.findAllByTypeAndLastPriceUpdatedDateBetween(ShopUnitType.OFFER, startDate, endDate);
@@ -327,6 +328,19 @@ public class ShopUnitService {
                         elem.getType(), elem.getPrice(), elem.getDate())));
 
         return shopUnitStatisticResponse;
+    }
+
+    /**
+     * Проверка формата даты
+     * @param stringDate Дата в текстовом формате
+     */
+    private void checkDateFormat(String stringDate) {
+        Pattern pattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z");
+        Matcher matcher = pattern.matcher(stringDate);
+        if (!matcher.matches()) {
+            log.error("Дата имеет не корректный формат");
+            throw new ValidationFailedException();
+        }
     }
 
     /**

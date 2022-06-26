@@ -1,6 +1,7 @@
 package ru.yandex.megamarket.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -59,9 +60,14 @@ public class ShopUnitController {
         return new ResponseEntity<>(shopUnit, HttpStatus.OK);
     }
 
-    @GetMapping("/sales")
-    public ResponseEntity<?> getUnitsByChangePriceLast24Hours() {
-        ShopUnitStatisticResponse statistic = shopUnitService.getSalesStatisticFor24Hour();
+    /**
+     * Список товаров за последние 24 часа
+     * @return ResponseEntity списка товаров
+     */
+    @GetMapping(value = "sales")
+    public ResponseEntity<?> getUnitsByChangePriceLast24Hours(
+            @RequestParam(name = "date") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS[X]") String date) {
+        ShopUnitStatisticResponse statistic = shopUnitService.getSalesStatisticFor24Hour(date);
         return new ResponseEntity<>(statistic, HttpStatus.OK);
     }
 
