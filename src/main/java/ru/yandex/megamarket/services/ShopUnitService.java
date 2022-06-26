@@ -17,12 +17,12 @@ import java.util.*;
 public class ShopUnitService {
 
     private final ShopUnitRepo shopUnitRepo;
-    private final ParserService parser;
+    private final ImportShopUnitService importShopUnitService;
 
     @Autowired
-    public ShopUnitService(ShopUnitRepo shopUnitRepo, ParserService parser) {
+    public ShopUnitService(ShopUnitRepo shopUnitRepo, ImportShopUnitService importShopUnitService) {
         this.shopUnitRepo = shopUnitRepo;
-        this.parser = parser;
+        this.importShopUnitService = importShopUnitService;
     }
 
     /**
@@ -30,58 +30,7 @@ public class ShopUnitService {
      * @param shopUnitImportRequest запрос со списком товаров и/или категорий
      */
     public void importShopUnitItems(ShopUnitImportRequest shopUnitImportRequest) {
-        // Достаем разово все товары из базы, чтобы по каждому товару не делать запрос
-        List<ShopUnit> listShopUnitFromBD = new ArrayList<>();
-        shopUnitRepo.findAll().forEach(listShopUnitFromBD::add);
-
-        List<ShopUnit> shopUnits = parser.parseShopUnitImportRequest(shopUnitImportRequest, listShopUnitFromBD);
-
-        // Сохраняем в БД список объектов
-        importUnit(shopUnits, listShopUnitFromBD);
-    }
-
-    /**
-     * Заполнение средней цены
-     * @param shopUnits список категорий и товаров на сохранение в БД
-     * @param  listShopUnitFromBD текущий список товаров и категорий из базы (до сохранения в базе нового списка)
-     */
-    public void importUnit(List<ShopUnit> shopUnits, List<ShopUnit> listShopUnitFromBD) {
-        Set<UUID> hashSetParentId = new HashSet<>();
-
-        for (ShopUnit shopUnit : shopUnits) {
-            if (shopUnit.getType().equals(ShopUnitType.CATEGORY)) {
-                // Выставляем среднюю цену нашей категории
-                shopUnit.setPrice(getAveragePriceFromList(shopUnit.getChildren()));
-                // Собираем список ID родителей (parentId) товаров, которые были изменены
-            } else {
-                // Если у товара до сохранения была другая категория, запомним ее (добавим в hashSetParentId) из текущего списка из БД до новых изменений
-                if (listShopUnitFromBD.contains(shopUnit)) {
-                    UUID uuid = listShopUnitFromBD.get(listShopUnitFromBD.indexOf(shopUnit)).getParentId();
-                    if (uuid != null) hashSetParentId.add(uuid);
-                }
-                // После этого добавим в hashSetParentId родительские категории из обновленной версии объекта
-                addParentIdInSet(hashSetParentId, shopUnit.getParentId());
-            }
-        }
-
-        // Сохраняем все в базу данных
-        shopUnitRepo.saveAll(shopUnits);
-
-        // Дополнительно обновляем среднюю цену РОДИТЕЛЬСКИМ категориям товаров, которые изменялись
-        List<ShopUnit> shopCat = new ArrayList<>();
-        hashSetParentId.forEach(elem -> shopCat.add(shopUnitRepo.findById(elem).get()));
-        if (!shopCat.isEmpty()) importUnit(shopCat, shopUnits);
-    }
-
-    /**
-     * Добавление родителя категории, если имеется в список на обновление средней цены
-     * @param hashSetParentId SET с категориями на обновление
-     * @param uuid uuid категории
-     */
-    public void addParentIdInSet(Set<UUID> hashSetParentId, UUID uuid) {
-        var category = shopUnitRepo.findById(uuid);
-        if (category.isPresent() && category.get().getParentId() != null) addParentIdInSet(hashSetParentId, category.get().getParentId());
-        hashSetParentId.add(uuid);
+        importShopUnitService.importShopUnitImportRequest(shopUnitImportRequest);
     }
 
     /**
@@ -94,43 +43,12 @@ public class ShopUnitService {
     }
 
     /**
-     * Средняя цена всех дочерних элементов категории (+ дочерних элементов самих дочерних элементов)
-     * @param listShopUnit Список дочерних элементов категории
-     * @return Long средняя цена
-     */
-    public Long getAveragePriceFromList(List<ShopUnit> listShopUnit) {
-        List<Long> listPrice = getPricesFromList(listShopUnit);
-        double averagePrice = listPrice.stream()
-                .mapToLong(Long::longValue)
-                .summaryStatistics().getAverage();
-        return Double.valueOf(averagePrice).longValue();
-    }
-
-    /**
-     * Список цен по категории
-     * @param listShopUnit Список товаров и/или категорий
-     * @return Список цен по категории
-     */
-    public List<Long> getPricesFromList(List<ShopUnit> listShopUnit) {
-        List<Long> listPrice = new ArrayList<>();
-        for (ShopUnit child : listShopUnit) {
-            // Если это товар то просто добавляем цену, иначе снова запускаем этот метод
-            if (child.getType().equals(ShopUnitType.OFFER)) listPrice.add(child.getPrice());
-            else if (!child.getChildren().isEmpty()) {
-                List<Long> listChildrenPrice = getPricesFromList(child.getChildren());
-                listPrice.addAll(listChildrenPrice);
-            }
-        }
-        return listPrice;
-    }
-
-    /**
      * Получение товара и/или категории по id
      * @param id идентификатор товара и/или категории в формате String
      * @return Optional<ShopUnit>
      */
     public Optional<ShopUnit> getShopUnitById(String id) {
-        return getShopUnitById(parser.stringToUUID(id));
+        return getShopUnitById(importShopUnitService.stringToUUID(id));
     }
 
     /**
@@ -180,7 +98,7 @@ public class ShopUnitService {
      * @param id идентификатор объекта ShopUnit
      */
     public void deleteShopUnitById(String id) {
-        UUID uuid = parser.stringToUUID(id);
+        UUID uuid = importShopUnitService.stringToUUID(id);
         ShopUnit shopUnit = shopUnitRepo.findById(uuid).orElseThrow(ItemNotFoundException::new);
 
         // При удалении категории удаляются все дочерние элементы
@@ -188,14 +106,8 @@ public class ShopUnitService {
 
         shopUnitRepo.delete(shopUnit);
 
-        // Обновляем у родительской категории среднюю цену после удаления дочернего элемента
-        if (shopUnit.getParentId() != null) {
-            Optional<ShopUnit> parentShopUnit = shopUnitRepo.findById(shopUnit.getParentId());
-            if (parentShopUnit.isPresent() && !parentShopUnit.get().getChildren().isEmpty()) {
-                parentShopUnit.get().setPrice(getAveragePriceFromList(parentShopUnit.get().getChildren()));
-                shopUnitRepo.save(parentShopUnit.get());
-            }
-        }
+        // Обновляем у родительской категории среднюю цену
+        importShopUnitService.updateParentCategory(shopUnit);
     }
 
     /**
