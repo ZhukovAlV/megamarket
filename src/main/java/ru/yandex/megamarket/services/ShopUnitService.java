@@ -31,9 +31,9 @@ public class ShopUnitService {
      * @param shopUnitImportRequest запрос со списком товаров и/или категорий
      */
     public void importShopUnitItems(ShopUnitImportRequest shopUnitImportRequest) {
-        parserService.validateShopUnitImportRequest(shopUnitImportRequest);
+        validateShopUnitImportRequest(shopUnitImportRequest);
         List<ShopUnitImport> shopUnitImportList = shopUnitImportRequest.getItems();
-        parserService.validateShopUnitImportList(shopUnitImportList);
+        validateShopUnitImportList(shopUnitImportList);
 
         OffsetDateTime updateDate = parserService.getIsoDate(shopUnitImportRequest.getUpdateDate());
         List<ShopUnit> shopUnitsForUpdateInBD = new ArrayList<>();
@@ -72,14 +72,79 @@ public class ShopUnitService {
                 shopUnitsForUpdateInBD.add(shopUnit);
             }
         }
-        saveShopUnitList(shopUnitsForUpdateInBD); // сохранение в базу данных из импорта
+        // сохранение в базу данных из импорта
+        saveShopUnitList(shopUnitsForUpdateInBD);
 
-        addChildren(shopUnitsForUpdateInBD, updateDate); // обновление списков дочерних товаров\категорий
-        updatePriceOfCategory(updateDate); // обновление цены категорий
+        // обновление списков дочерних товаров\категорий
+        addChildren(shopUnitsForUpdateInBD, updateDate);
+
+        // обновление цены категорий
+        updatePriceOfCategory(updateDate);
 
         log.info("Вставка или обновление прошли успешно");
     }
 
+    /**
+     * Проверка списка shopUnitImportRequest
+     * @param shopUnitImportRequest список shopUnitImportRequest
+     */
+    public void validateShopUnitImportRequest(ShopUnitImportRequest shopUnitImportRequest) {
+        List<ShopUnitImport> shopUnitImportList = shopUnitImportRequest.getItems();
+        if (shopUnitImportList == null || shopUnitImportList.size() < 1) {
+            log.warn("Запрос на импорт содержит пустой список");
+            throw new ValidationFailedException();
+        }
+
+        for (ShopUnitImport shopUnitImport : shopUnitImportList) {
+            long count = shopUnitImportList.stream().filter(item -> shopUnitImport.getId().equals(item.getId())).count();
+            if (count > 1) {
+                log.warn("В одном запросе не может быть двух элементов с одинаковым id");
+                throw new ValidationFailedException();
+            }
+        }
+    }
+
+    /**
+     * Проверка списка shopUnitImportList
+     * @param shopUnitImportList список shopUnitImportList
+     */
+    public void validateShopUnitImportList(List<ShopUnitImport> shopUnitImportList) {
+        boolean isValidated = true;
+        for (ShopUnitImport shopUnitImport : shopUnitImportList) {
+            if (shopUnitImport.getId() == null || shopUnitImport.getId().trim().equals("")) {
+                log.warn("Поле id не должно быть пустым");
+                isValidated = false;
+                break;
+            }
+            if (shopUnitImport.getName() == null
+                    || shopUnitImport.getName().trim().equals("")) {
+                log.warn("Поле name не должно быть пустым");
+                isValidated = false;
+                break;
+            }
+            if (shopUnitImport.getType().equals(ShopUnitType.OFFER)
+                    && (shopUnitImport.getPrice() == null || shopUnitImport.getPrice() < 0)) {
+                log.warn("Цена товара должна быть больше либо равна нулю");
+                isValidated = false;
+                break;
+            }
+            if (shopUnitImport.getType().equals(ShopUnitType.CATEGORY)
+                    && shopUnitImport.getPrice() != null) {
+                log.warn("У категорий цена должна быть null");
+                isValidated = false;
+                break;
+            }
+            if (shopUnitImport.getType() == null) {
+                log.warn("Обязательно нужно указывать тип (Категория или товар)");
+                isValidated = false;
+                break;
+            }
+        }
+
+        if (isValidated) {
+            log.info("Схема импорта элементов валидна");
+        } else throw new ValidationFailedException();
+    }
 
     /**
      * Обновление средней цены категорий
@@ -110,10 +175,10 @@ public class ShopUnitService {
         }
 
         List<Long> listPrice = getPricesFromChildren(children);
-        double priceSum = listPrice.stream()
+        double averagePrice = listPrice.stream()
                 .mapToLong(Long::longValue)
-                .sum();
-        return (long) (priceSum / listPrice.size());
+                .summaryStatistics().getAverage();
+        return Double.valueOf(averagePrice).longValue();
     }
 
     /**
